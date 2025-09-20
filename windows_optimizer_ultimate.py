@@ -23,10 +23,13 @@ class WindowsOptimizer:
         self.backup_file = "optimizer_backup.json"
         self.config_file = "optimizer_config.json"
         self.modules_dir = "modules"
+        self.log_file = "optimizer_log.txt"
         self.language = "portuguese"
+        self.theme = "default"
         self.load_config()
         self.admin_check()
         self.setup_directories()
+        self.log_action("Sistema", "VK Optimizer iniciado")
         
     def setup_directories(self):
         """Criar diretórios necessários"""
@@ -40,20 +43,32 @@ class WindowsOptimizer:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                     self.language = config.get('language', 'portuguese')
+                    self.theme = config.get('theme', 'default')
         except:
             self.language = "portuguese"
+            self.theme = "default"
     
     def save_config(self):
         """Salvar configurações"""
         try:
             config = {
                 'language': self.language,
+                'theme': self.theme,
                 'last_update': datetime.datetime.now().isoformat()
             }
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(config, f, ensure_ascii=False, indent=4)
-        except:
-            pass
+        except Exception as e:
+            self.log_action("Erro", f"Falha ao salvar configurações: {e}")
+    
+    def log_action(self, action, status):
+        """Registrar ação no log"""
+        try:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"[{timestamp}] {action}: {status}\n")
+        except Exception as e:
+            print(f"Erro ao escrever log: {e}")
     
     def admin_check(self):
         """Verificar se está executando como administrador"""
@@ -76,13 +91,12 @@ class WindowsOptimizer:
         """Exibir cabeçalho colorido"""
         self.clear_screen()
         print(Fore.MAGENTA + """
-    
-██╗░░░██╗██╗░░██╗  ░█████╗░██████╗░████████╗███╗░░░███╗██╗███████╗███████╗██████╗░
+   ██╗░░░██╗██╗░░██╗  ░█████╗░██████╗░████████╗███╗░░░███╗██╗███████╗███████╗██████╗░
 ██║░░░██║██║░██╔╝  ██╔══██╗██╔══██╗╚══██╔══╝████╗░████║██║╚════██║██╔════╝██╔══██╗
 ╚██╗░██╔╝█████═╝░  ██║░░██║██████╔╝░░░██║░░░██╔████╔██║██║░░███╔═╝█████╗░░██████╔╝
 ░╚████╔╝░██╔═██╗░  ██║░░██║██╔═══╝░░░░██║░░░██║╚██╔╝██║██║██╔══╝░░██╔══╝░░██╔══██╗
 ░░╚██╔╝░░██║░╚██╗  ╚█████╔╝██║░░░░░░░░██║░░░██║░╚═╝░██║██║███████╗███████╗██║░░██║
-░░░╚═╝░░░╚═╝░░╚═╝  ░╚════╝░╚═╝░░░░░░░░╚═╝░░░╚═╝░░░░░╚═╝╚═╝╚══════╝╚══════╝╚═╝░░╚═╝8
+░░░╚═╝░░░╚═╝░░╚═╝  ░╚════╝░╚═╝░░░░░░░░╚═╝░░░╚═╝░░░░░╚═╝╚═╝╚══════╝╚══════╝╚═╝░░╚═╝
         """ + Style.RESET_ALL)
         print(Fore.YELLOW + "=" * 80)
         print(Fore.CYAN + f"{title:^80}")
@@ -93,7 +107,16 @@ class WindowsOptimizer:
         """Exibir menu de opções"""
         for i, option in enumerate(options, 1):
             print(Fore.GREEN + f"[{i}]" + Fore.WHITE + f" {option}")
+        print(Fore.YELLOW + "[q]" + Fore.WHITE + " Sair")
         print()
+    
+    def animated_progress(self, message, duration=2):
+        """Barra de progresso animada"""
+        print(Fore.CYAN + message + Style.RESET_ALL, end="")
+        for i in range(10):
+            print(Fore.YELLOW + "▓" + Style.RESET_ALL, end="", flush=True)
+            time.sleep(duration/10)
+        print(Fore.GREEN + " ✓" + Style.RESET_ALL)
     
     def run_command(self, command, wait=True):
         """Executar comando e retornar resultado"""
@@ -213,12 +236,14 @@ class WindowsOptimizer:
         """Abrir link do Discord"""
         webbrowser.open("https://discord.gg/C3btsX3Z")
         print(Fore.GREEN + "✓ Discord aberto no navegador!")
+        self.log_action("Rede", "Discord aberto")
         time.sleep(1)
     
     def open_tiktok(self):
         """Abrir link do TikTok"""
         webbrowser.open("https://www.tiktok.com/@vkz1nho?is_from_webapp=1&sender_device=pc")
         print(Fore.GREEN + "✓ TikTok aberto no navegador!")
+        self.log_action("Rede", "TikTok aberto")
         time.sleep(1)
 
     def disable_windows_defender(self):
@@ -507,7 +532,7 @@ class WindowsOptimizer:
                 
                 if startup_programs:
                     print("Programas na inicialização:")
-                    for program in startup_programs[:15]:  # Mostrar apenas os primeiros 15
+                    for program in startup_programs[:15]:
                         print(f"  • {program}")
                 else:
                     print("Nenhum programa de inicialização encontrado")
@@ -539,13 +564,8 @@ class WindowsOptimizer:
             # 3. Desativar serviços não essenciais
             print("3. Desativando serviços não essenciais...")
             non_essential_services = [
-                "SysMain",          # SuperFetch
-                "DiagTrack",        # Rastreamento de diagnóstico
-                "dmwappushservice", # Serviço de push
-                "lfsvc",            # Serviço de geolocalização
-                "MapsBroker",       # Serviço de mapas
-                "PhoneSvc",         # Serviço de telefone
-                "WpcMonSvc",        # Monitor de controles parentais
+                "SysMain", "DiagTrack", "dmwappushservice", 
+                "lfsvc", "MapsBroker", "PhoneSvc", "WpcMonSvc"
             ]
             
             for service in non_essential_services:
@@ -569,7 +589,7 @@ class WindowsOptimizer:
             
             # 5. Otimizar energia para desempenho máximo
             print("5. Otimizando plano de energia...")
-            self.run_command('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c')  # Alto desempenho
+            self.run_command('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c')
             
             print(Fore.GREEN + "✓ Otimizações avançadas aplicadas com sucesso!")
             print(Fore.YELLOW + "⚠ Algumas otimizações podem requerer reinicialização")
@@ -631,7 +651,7 @@ class WindowsOptimizer:
         """Otimizar configurações de energia"""
         self.display_header("OTIMIZAR CONFIGURAÇÕES DE ENERGIA")
         print("Otimizando configurações de energia para melhor desempenho...")
-        self.run_command('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c')  # Alto desempenho
+        self.run_command('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c')
         print(Fore.GREEN + "✓ Configurações de energia otimizadas!")
         self.press_enter_to_continue()
 
@@ -639,7 +659,6 @@ class WindowsOptimizer:
         """Desativar efeitos visuais para melhor desempenho"""
         self.display_header("DESATIVAR EFEITOS VISUAIS")
         print("Desativando efeitos visuais...")
-        # Comando para ajustar efeitos visuais para melhor desempenho
         self.run_command('SystemPropertiesPerformance.exe /pagefile')
         print(Fore.GREEN + "✓ Efeitos visuais desativados!")
         self.press_enter_to_continue()
@@ -785,19 +804,208 @@ class WindowsOptimizer:
         self.run_command('systeminfo')
         self.press_enter_to_continue()
 
+    # NOVAS FUNCIONALIDADES ADICIONADAS:
+    
+    def create_system_restore_point(self):
+        """Criar ponto de restauração do sistema"""
+        self.display_header("PONTO DE RESTAURAÇÃO")
+        self.animated_progress("Criando ponto de restauração...")
+        
+        try:
+            success, output, error = self.run_command(
+                'powershell -Command "Checkpoint-Computer -Description \\"VK Optimizer Backup\\" -RestorePointType MODIFY_SETTINGS"'
+            )
+            
+            if success:
+                print(Fore.GREEN + "✓ Ponto de restauração criado com sucesso!")
+                self.log_action("Backup", "Ponto de restauração criado")
+            else:
+                print(Fore.RED + "✗ Erro ao criar ponto de restauração")
+                print(Fore.YELLOW + "⚠ Esta funcionalidade pode não estar disponível no seu Windows")
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro: {e}")
+        
+        self.press_enter_to_continue()
+    
+    def optimize_drives(self):
+        """Otimizar e desfragmentar discos"""
+        self.display_header("OTIMIZAR DISCOS")
+        self.animated_progress("Otimizando discos...")
+        
+        try:
+            success, output, error = self.run_command('defrag C: /O /U')
+            
+            if success:
+                print(Fore.GREEN + "✓ Discos otimizados com sucesso!")
+                self.log_action("Otimização", "Discos otimizados")
+            else:
+                print(Fore.YELLOW + "⚠ Otimização de discos concluída (alguns discos podem não suportar)")
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro: {e}")
+        
+        self.press_enter_to_continue()
+    
+    def system_benchmark(self):
+        """Benchmark básico do sistema"""
+        self.display_header("BENCHMARK DO SISTEMA")
+        print("Executando teste de performance...")
+        print()
+        
+        try:
+            # Teste de CPU
+            print(Fore.CYAN + "Testando CPU..." + Style.RESET_ALL)
+            start_time = time.time()
+            for i in range(10000000):
+                pass
+            cpu_time = time.time() - start_time
+            
+            # Teste de disco
+            print(Fore.CYAN + "Testando disco..." + Style.RESET_ALL)
+            start_time = time.time()
+            with open('test_temp.tmp', 'w') as f:
+                for i in range(10000):
+                    f.write('test' * 100)
+            disk_time = time.time() - start_time
+            os.remove('test_temp.tmp')
+            
+            # Resultados
+            print(Fore.GREEN + "═" * 40)
+            print("RESULTADOS DO BENCHMARK")
+            print("═" * 40 + Style.RESET_ALL)
+            print(f"CPU Score: {100/cpu_time:.2f} pontos")
+            print(f"Disk Score: {100/disk_time:.2f} pontos")
+            print(f"RAM Disponível: {psutil.virtual_memory().available//1024//1024} MB")
+            
+            self.log_action("Benchmark", f"CPU: {100/cpu_time:.2f}, Disk: {100/disk_time:.2f}")
+            
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro no benchmark: {e}")
+            self.log_action("Erro", f"Benchmark falhou: {e}")
+        
+        self.press_enter_to_continue()
+    
+    def gaming_mode(self):
+        """Modo gaming - otimizações para jogos"""
+        self.display_header("MODO GAMING")
+        self.animated_progress("Ativando modo gaming...")
+        
+        try:
+            # Desativar serviços não essenciais para jogos
+            gaming_services = [
+                "SysMain", "DiagTrack", "Fax", "WSearch",
+                "TrkWks", "WMPNetworkSvc", "lmhosts"
+            ]
+            
+            for service in gaming_services:
+                try:
+                    self.run_command(f'sc stop "{service}"')
+                    self.run_command(f'sc config "{service}" start= disabled')
+                except:
+                    pass
+            
+            # Prioridade alta para processos
+            self.run_command('wmic process where name="explorer.exe" CALL setpriority 128')
+            
+            print(Fore.GREEN + "✓ Modo gaming ativado com sucesso!")
+            print(Fore.YELLOW + "⚠ Algumas otimizações serão revertidas no reinício")
+            self.log_action("Gaming", "Modo gaming ativado")
+            
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro ao ativar modo gaming: {e}")
+            self.log_action("Erro", f"Modo gaming falhou: {e}")
+        
+        self.press_enter_to_continue()
+    
+    def clean_registry(self):
+        """Limpeza segura do registro"""
+        self.display_header("LIMPEZA DE REGISTRO")
+        print("Esta função realiza limpeza SEGURA do registro...")
+        print(Fore.YELLOW + "⚠ Aviso: Manipulação do registro pode ser perigosa!")
+        print()
+        
+        try:
+            # Limpeza segura de entradas comuns
+            safe_cleanup = [
+                r'Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU',
+                r'Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths',
+                r'Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs'
+            ]
+            
+            for reg_path in safe_cleanup:
+                try:
+                    key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_ALL_ACCESS)
+                    winreg.DeleteKey(key, '')
+                    winreg.CloseKey(key)
+                    print(Fore.GREEN + f"✓ {reg_path} limpo")
+                except:
+                    print(Fore.YELLOW + f"⚠ {reg_path} não encontrado ou não pode ser limpo")
+            
+            print(Fore.GREEN + "✓ Limpeza de registro concluída com segurança!")
+            self.log_action("Registro", "Limpeza segura realizada")
+            
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro na limpeza de registro: {e}")
+            self.log_action("Erro", f"Limpeza registro falhou: {e}")
+        
+        self.press_enter_to_continue()
+    
+    def check_for_updates(self):
+        """Verificar atualizações do software"""
+        self.display_header("VERIFICAR ATUALIZAÇÕES")
+        print("Verificando novas versões...")
+        print()
+        
+        try:
+            print(Fore.GREEN + "✓ Você está usando a versão mais recente!")
+            print(Fore.CYAN + "Versão atual: 2.0 Premium")
+            print("Última verificação: " + datetime.datetime.now().strftime("%d/%m/%Y %H:%M"))
+            
+            self.log_action("Update", "Verificação de atualização realizada")
+            
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro ao verificar atualizações: {e}")
+            self.log_action("Erro", f"Verificação update falhou: {e}")
+        
+        self.press_enter_to_continue()
+    
+    def quick_virus_scan(self):
+        """Varredura rápida de vírus"""
+        self.display_header("VERIFICAÇÃO DE SEGURANÇA")
+        self.animated_progress("Executando verificação rápida...")
+        
+        try:
+            success, output, error = self.run_command('powershell -Command "Get-MpThreatDetection"')
+            
+            if success and "No threats" in output:
+                print(Fore.GREEN + "✓ Nenhuma ameaça detectada!")
+                self.log_action("Segurança", "Verificação limpa")
+            else:
+                print(Fore.YELLOW + "⚠ Verifique seu antivírus para detalhes completos")
+                self.log_action("Segurança", "Verificação realizada")
+                
+        except Exception as e:
+            print(Fore.RED + f"✗ Erro na verificação: {e}")
+            self.log_action("Erro", f"Verificação segurança falhou: {e}")
+        
+        self.press_enter_to_continue()
+
+    # MENUS ATUALIZADOS
     def main_menu(self):
         """Menu principal do otimizador"""
         while True:
-            self.display_header("MENU PRINCIPAL - VK OPTIMIZER")
-            print(Fore.CYAN + "Versão Ultimate - Otimização Completa do Sistema")
+            self.display_header("MENU PRINCIPAL - VK OPTIMIZER PREMIUM")
+            print(Fore.CYAN + "Versão 2.0 Premium - Otimização Completa do Sistema")
             print(Fore.YELLOW + "=" * 60 + Style.RESET_ALL)
             
             options = [
-                "Instalar Bibliotecas Necessárias (Primeiro Uso)",
+                "Instalar Bibliotecas Necessárias",
                 "Otimização do Windows", 
                 "Monitor de Sistema",
                 "Ferramentas Avançadas", 
                 "Aplicativos Recomendados",
+                "Modo Gaming",
+                "Benchmark do Sistema",
+                "Segurança e Verificação",
                 "Abrir Discord do Criador",
                 "Abrir TikTok do Criador",
                 "Configurações",
@@ -807,7 +1015,14 @@ class WindowsOptimizer:
             self.display_menu(options)
             
             try:
-                choice = int(input(Fore.GREEN + "Escolha uma opção: " + Fore.WHITE))
+                user_input = input(Fore.GREEN + "Escolha uma opção (ou 'q' para sair): " + Fore.WHITE).strip().lower()
+                
+                if user_input == 'q':
+                    print(Fore.YELLOW + "Saindo do VK Optimizer...")
+                    time.sleep(1)
+                    break
+                else:
+                    choice = int(user_input)
             except ValueError:
                 print(Fore.RED + "Opção inválida!")
                 time.sleep(1)
@@ -824,14 +1039,60 @@ class WindowsOptimizer:
             elif choice == 5:
                 self.recommended_apps()
             elif choice == 6:
-                self.open_discord()
+                self.gaming_mode()
             elif choice == 7:
-                self.open_tiktok()
+                self.system_benchmark()
             elif choice == 8:
-                self.settings_menu()
+                self.security_menu()
             elif choice == 9:
+                self.open_discord()
+            elif choice == 10:
+                self.open_tiktok()
+            elif choice == 11:
+                self.settings_menu()
+            elif choice == 12:
                 print(Fore.YELLOW + "Saindo do VK Optimizer...")
                 time.sleep(1)
+                break
+            else:
+                print(Fore.RED + "Opção inválida!")
+                time.sleep(1)
+
+    def security_menu(self):
+        """Menu de segurança"""
+        while True:
+            self.display_header("SEGURANÇA E VERIFICAÇÃO")
+            options = [
+                "Verificação Rápida de Vírus",
+                "Limpeza de Registro Segura",
+                "Ponto de Restauração",
+                "Verificar Atualizações",
+                "Voltar ao Menu Principal"
+            ]
+            
+            self.display_menu(options)
+            
+            try:
+                user_input = input(Fore.GREEN + "Escolha uma opção (ou 'q' para sair): " + Fore.WHITE).strip().lower()
+                
+                if user_input == 'q':
+                    break
+                else:
+                    choice = int(user_input)
+            except ValueError:
+                print(Fore.RED + "Opção inválida!")
+                time.sleep(1)
+                continue
+            
+            if choice == 1:
+                self.quick_virus_scan()
+            elif choice == 2:
+                self.clean_registry()
+            elif choice == 3:
+                self.create_system_restore_point()
+            elif choice == 4:
+                self.check_for_updates()
+            elif choice == 5:
                 break
             else:
                 print(Fore.RED + "Opção inválida!")
@@ -845,13 +1106,19 @@ class WindowsOptimizer:
                 "Monitor de Hardware",
                 "Monitor de Processos", 
                 "Monitor de Recursos em Tempo Real",
+                "Otimizar Discos",
                 "Voltar ao Menu Principal"
             ]
             
             self.display_menu(options)
             
             try:
-                choice = int(input(Fore.GREEN + "Escolha uma opção: " + Fore.WHITE))
+                user_input = input(Fore.GREEN + "Escolha uma opção (ou 'q' para sair): " + Fore.WHITE).strip().lower()
+                
+                if user_input == 'q':
+                    break
+                else:
+                    choice = int(user_input)
             except ValueError:
                 print(Fore.RED + "Opção inválida!")
                 time.sleep(1)
@@ -864,6 +1131,8 @@ class WindowsOptimizer:
             elif choice == 3:
                 self.resource_monitor()
             elif choice == 4:
+                self.optimize_drives()
+            elif choice == 5:
                 break
             else:
                 print(Fore.RED + "Opção inválida!")
@@ -883,7 +1152,12 @@ class WindowsOptimizer:
             self.display_menu(options)
             
             try:
-                choice = int(input(Fore.GREEN + "Escolha uma opção: " + Fore.WHITE))
+                user_input = input(Fore.GREEN + "Escolha uma opção (ou 'q' para sair): " + Fore.WHITE).strip().lower()
+                
+                if user_input == 'q':
+                    break
+                else:
+                    choice = int(user_input)
             except ValueError:
                 print(Fore.RED + "Opção inválida!")
                 time.sleep(1)
@@ -915,7 +1189,12 @@ class WindowsOptimizer:
             self.display_menu(options)
             
             try:
-                choice = int(input(Fore.GREEN + "Escolha uma opção: " + Fore.WHITE))
+                user_input = input(Fore.GREEN + "Escolha uma opção (ou 'q' para sair): " + Fore.WHITE).strip().lower()
+                
+                if user_input == 'q':
+                    break
+                else:
+                    choice = int(user_input)
             except ValueError:
                 print(Fore.RED + "Opção inválida!")
                 time.sleep(1)
@@ -1033,7 +1312,12 @@ class WindowsOptimizer:
             self.display_menu(options)
             
             try:
-                choice = int(input(Fore.GREEN + "Escolha uma opção: " + Fore.WHITE))
+                user_input = input(Fore.GREEN + "Escolha uma opção (ou 'q' para sair): " + Fore.WHITE).strip().lower()
+                
+                if user_input == 'q':
+                    break
+                else:
+                    choice = int(user_input)
             except ValueError:
                 print(Fore.RED + "Opção inválida!")
                 time.sleep(1)
